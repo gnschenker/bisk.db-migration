@@ -1,0 +1,24 @@
+version: "2.4"
+services:
+  postgres:
+    image: postgres:12.0-alpine
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: bisk.blogging
+      POSTGRES_USER: pguser
+      POSTGRES_PASSWORD: topsecret
+
+  api:
+    image: acme/bisk.api:1.0
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    ports:
+      - 5000:5000
+
+volumes:
+  pg-data:

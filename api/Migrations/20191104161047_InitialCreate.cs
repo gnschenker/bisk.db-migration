@@ -1,6 +1,6 @@
 ﻿using System;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace api.Migrations
 {
@@ -13,7 +13,7 @@ namespace api.Migrations
                 columns: table => new
                 {
                     BlogId = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
                     Url = table.Column<string>(maxLength: 500, nullable: false),
                     Timestamp = table.Column<byte[]>(rowVersion: true, nullable: true)
                 },
@@ -27,7 +27,8 @@ namespace api.Migrations
                 columns: table => new
                 {
                     PostId = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
+                    ShortTitle = table.Column<string>(maxLength: 25, nullable: false),
                     Title = table.Column<string>(maxLength: 255, nullable: false),
                     Content = table.Column<string>(nullable: true),
                     BlogId = table.Column<int>(nullable: false)

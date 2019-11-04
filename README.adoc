@@ -146,3 +146,32 @@ dotnet add package Microsoft.EntityFrameworkCore.InMemory
 Please refer to the documentation here for the details on how to use this provider: https://docs.microsoft.com/en-us/ef/core/miscellaneous/testing/in-memory
 
 You can find a sample test suite in subfolder `unittests`
+
+== Running the API with Postgres
+
+. Run the application with:
++
+[source]
+--
+docker-compose up -d --build
+--
+
+. Create the initial DB with:
++
+[source]
+--
+docker-compose exec api sh -c "dotnet ef database update"
+--
+
+. Test the app with e.g. Postman and post to http://localhost:5000/api/blogs the body:
++
+[json]
+--
+{
+    "title": "Some ramblings about Docker, Kubernetes, Kafka and .NET",
+    "shorttitle": "Docker, Kubernetes, Kafka and .NET",
+    "url": "https://gabrielschenker.com/index.php/blog"
+}
+--
++
+Make sure the return code is 201 and you get the ID of the new blog in the response body

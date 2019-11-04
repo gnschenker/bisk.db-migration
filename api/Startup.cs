@@ -29,7 +29,8 @@ namespace api
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
             services.AddDbContext<BloggingContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("BloggingDatabase")));
+                // options.UseSqlServer(Configuration.GetConnectionString("BloggingDatabase")));
+                options.UseNpgsql(Configuration.GetConnectionString("PgBloggingDatabase")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

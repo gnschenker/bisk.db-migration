@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace bisk.model
 {
-    class BloggingContext : DbContext
+    public class BloggingContext : DbContext
     {
         public BloggingContext(DbContextOptions options) : base(options){}
 

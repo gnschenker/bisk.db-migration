@@ -133,3 +133,16 @@ dotnet ef migrations script -o Migrations/scripts/InitialCreat.sql
 dotnet ef migrations script InitialCreate AddShortTitleToBlog \
     -o Migrations/scripts/AddShortTitleToBlog.sql
 --
+
+== Testing
+
+There is a nice in-memory DB provider available that is ideally suited for testing. The corresponding driver can be added to the (test-) project as follows:
+
+[source]
+--
+dotnet add package Microsoft.EntityFrameworkCore.InMemory
+--
+
+Please refer to the documentation here for the details on how to use this provider: https://docs.microsoft.com/en-us/ef/core/miscellaneous/testing/in-memory
+
+You can find a sample test suite in subfolder `unittests`

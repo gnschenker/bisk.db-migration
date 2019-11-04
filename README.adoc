@@ -1,0 +1,135 @@
+= Database Migrations
+
+== Theory
+
+A microservice using a relational database evolves over time. This leads to necessary schema changes in the database. When deploying a new version of the microservice to production we want to avoid any down time (so called zero-downtime deployments).
+
+In production or production like environments it is a best practice to apply schema changes via SQL scripts. Those scripts can and should be reviewed by DBAs and/or DevOps engineers responsible for the production DB. Applying the scripts should be part of the CI/CD pipeline, that is, fully automated.
+
+Some times it is necessary to introduce a breaking change in the database, that is, the new version is *not* backwards compatible. In such a situation a deployment of a microservice using this new schema has to happen in 3 steps instead of a single one:
+
+. Deploy backwards compatible version of requested schema change
+. Deploy new version of microservice with zero downtime
+. Deploy another schema change that removes the backwards compatibility of the schema
+
+A sample would be where an entity `Person` has properties `LastName` and `FirstName`. Those should now be replaced by a property `FullName` which is a combination of the latter two. The three steps would then look as follows:
+
+. Deploy a DB script adding a column `FullName` to the table `Persons` and updating the latter column with the value of `LastName, FirstName`
+. Deploy the new version of the microservice only using the field `FullName`, e.g. in a rolling fashion. +
+_During the update process some instances of the microservice will still use the old schema whilst new versions will rely on the existence of the new field. This is the reason why we need the 3 step process in the first place!_
+. Deploy another DB script removing the now obsolete fields `FirstName` and `LastName`
+
+Since in our case we're using .NET Core and the EntityFramework (EF) to access the database (Postgres) we should leverage the migrations feature of EF and proceed as follows:
+
+== Preparing the data model and the DB Context
+
+. Create a new project (e.g. .NET Core Web API)
+. Create a first data model in code
+. Create a `DbContext` (e.g. `BloggingContext`)
+. Configure a connection string in `appsettings.Development.json` (e.g. called `BloggingDatabase`)
+. Configure the `DbContext` in the `Startup` class
++
+[source]
+--
+services.AddDbContext<BloggingContext>(options =>
+    options.UseSqlServer(Configuration.GetConnectionString("BloggingDatabase")));
+--
+
+. Add a constructor to the context that accepts a param of type `DbContextOptions` and passes it to the base class
+
+Now we're ready to create our initial DB migration that will create the database and the tables and relations within it.
+
+== DB Migrations
+
+For more details see here: https://docs.microsoft.com/en-us/ef/core/managing-schemas/migrations/
+
+=== Initial Migration
+
+. Run the following command from the project folder to create the initial DB migration:
++
+[source]
+--
+dotnet ef migrations add InitialCreate
+--
++
+This will create the first scripts in folder `Migrations` 
++
+WARNING: This only works if you have a data model, DB context and a DB connection configured in your project.
+
+. Apply the migration to the database to create the schema:
++
+[source]
+--
+dotnet ef database update
+# or
+dotnet ef database update InitialCreate
+--
++
+NOTE: The first command (with no target migration) updates the DB to the last available migration. +
+Migrations are ordered by date/time!
+
+=== Schema Updates
+
+. Modify the `Post` entity and add a field `ShortTitle` (not null)
+
+. To create a new (named) migration run the following command:
++
+[source]
+--
+dotnet ef migrations add AddShortTitleToBlog
+--
+
+. OPTIONAL: Add *custom code* to the migration, e.g. fill the new column with data add the following snippet after the AddColumn command in the `Up` method of the migration:
++
+[source]
+--
+migrationBuilder.Sql(
+@"
+    UPDATE Post
+    SET ShortTitle = SUBSTRING(Title,1,25);
+");
+--
+
+. Apply the migration to the database using the appropriate command:
++
+[source]
+--
+dotnet ef database update
+--
+
+. Remove the *last* migration (e.g. when you need to make a change to model that should have been part of this migration):
++
+[source]
+--
+dotnet ef migrations remove
+--
+
+. To list all migrations use:
++
+[source]
+--
+dotnet ef migrations list
+--
+
+. Revert a single (or several) migrations back to a know `<last good migration>`:
++
+[source]
+--
+dotnet ef database update <last good migration>
+--
+
+. When debugging your migrations or *deploying them to a production database*, it's useful to generate a SQL script. The script can then be further reviewed for accuracy and tuned to fit the needs of a production database. The script can also be used in conjunction with a deployment technology (CI/CD). The basic command is as follows:
++
+[source]
+--
+dotnet ef migrations script <current migration> <last of new migrations> -o <output file name>
+
+# e.g.
+
+# create script for inital migration
+dotnet ef migrations script -o Migrations/scripts/InitialCreat.sql
+
+# create script for migration from `InitialCreate` to `AddShortTitleToBlog`
+dotnet ef migrations script InitialCreate AddShortTitleToBlog \
+    -o Migrations/scripts/AddShortTitleToBlog.sql
+--
